@@ -1,0 +1,38 @@
+Viral Diversity Data Pipeline  -
+================================================
+
+Analysis Notes:
+
+Before running the snakemake, be sure that all files have the correct naming convention. From the name, the computer should be able to determine the experiment number (i.e CD10), the mouse ID, the virus strain, and the week the sample was taken. Additionally, identical samples with multiple sequencing runs (multiple fastq files) can be merged into one file. 
+
+Additionally, make sure the computer environment have been created before processing samples.
+
+Process Details:
+
+create config file::
+
+ls data/raw_fastq_files/ | cut -d "_" -f 1 | uniq > names.txt
+
+while read p; do
+  ls data/raw_fastq_files/"$p"*R1*.gz | xargs cat > data/fastq_files/"$p"_R1.fastq.gz
+  ls data/raw_fastq_files/"$p"*R2*.gz | xargs cat > data/fastq_files/"$p"_R2.fastq.gz
+done <names.txt
+
+echo samples: > config.yaml
+awk '{ print "    " $0 ": data/fastq_files/" $0 "_R1.fastq.gz" }' < names.txt >> config.yaml
+
+
+Activate environment::
+
+    conda activate ampseq
+
+Make sure to build reference indexes:
+
+bowtie2-build data/reference_index/REJOc-reference.fa data/reference_index/REJOc-reference.fa
+bowtie2-build data/reference_index/JRCSF-reference.fa data/reference_index/JRCSF-reference.fa
+
+
+
+Run Snakemake::
+
+    snakemake --cores 8
